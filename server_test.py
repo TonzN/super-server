@@ -34,8 +34,9 @@ async def client_handler(client_socket):
     
     except Exception as e:
         print(f"could not recieve or send back to client {e}")
-
-    client_socket.close()
+    
+    finally:
+        client_socket.close()
 
 async def run_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -45,26 +46,20 @@ async def run_server():
         loop = asyncio.get_event_loop()
 
         while config["run_server"]:
-            client_socket, client_addr = await loop.sock_accept(server_socket)
-            print(f"Accepted connection from {client_addr}")
+            try: 
+                client_socket, client_addr = await loop.sock_accept(server_socket)
+                print(f"Accepted connection from {client_addr}")
 
-            # Handle the client in a separate coroutine
-            asyncio.create_task(client_handler(client_socket))
+                # Handle the client in a separate coroutine
+        
+                asyncio.create_task(client_handler(client_socket))
+            except Exception as e:
+                print("Error in main loop {e} \n")
 
     print("closing server\n")
     
 
-def server_command_line():
-    #subprocess.run("start", "cmd")
-    while config["run_server"] == True:
-        server_command = input("Command: ")
-        if server_command.lower() == "close":
-            config["run_server"] = False
-            return
-
 async def main():
-    server_thread = threading.Thread(target=server_command_line, daemon=True)
-    server_thread.start()
     await run_server()
 
 asyncio.run(main())
