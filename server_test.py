@@ -38,11 +38,12 @@ except Exception as e:
 HOST = config["HOST"]
 PORT = config["PORT"]
 client_capacity = config["user_capacity"]
+func_keys = config["function_keys"]
 
 async def update_users_count():
     config["user_count"] += 1
 
-async def verify_user(username):
+def verify_user(username):
     if username in users:
         return 1
     else:
@@ -51,18 +52,18 @@ async def verify_user(username):
 async def client_handler(client_socket):
     loop = asyncio.get_event_loop()
     try:
-        function, data = await loop.sock_recv(client_socket, 1024) #expects a tuple (function, data)
-        message = data.decode()
-        function = function.decode()
-     
-        try:
-            reponse = await str(globals()[function](data)) #data must be packaged so it can be sent to functions
-        except Exception as e:
-            reponse = None
-            print(f"Function is not a valid server request: {e}")
+        data = await loop.sock_recv(client_socket, 1024) #first 4 letters are function keywords
+        data = data.decode()
+        function = data[0:4]
+        if function in func_keys: 
+            try:
+                reponse = str(globals()[func_keys[function]](data)) 
+            except Exception as e:
+                reponse = None
+                print(f"Function is not a valid server request: {e}")
 
         if reponse:
-            await loop.sock_sendall(client_socket, message.encode())
+            await loop.sock_sendall(client_socket, reponse.encode())
     
     except Exception as e:
         print(f"could not recieve or send back to client {e}")
@@ -76,6 +77,7 @@ async def run_server():
         server_socket.listen(client_capacity)
         server_socket.setblocking(False)
         loop = asyncio.get_event_loop()
+        print("Server spawned!!")
 
         while config["run_server"]:
             try: 
@@ -90,6 +92,12 @@ async def run_server():
 
     print("closing server\n")
     
+
+async def main():
+    await run_server()
+
+asyncio.run(main())
+
 
 async def main():
     await run_server()
