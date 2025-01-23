@@ -6,5 +6,8 @@
     "client_cmds": {
         "create_client": true
     },
-    "user_count": 0
+    "user_count": 0,
+    "function_keys":{
+        "veus": "verify_user"
+    }
 }
