@@ -43,9 +43,10 @@ except Exception as e:
 user_capacity = config["user_capacity"]
 client_cmds = config["client_cmds"]
 
+
 def send_to_server(client_sock, msg):
     try:
-        client_sock.sendall(msg)
+        client_sock.sendall(str(msg).encode())
     except Exception as e:
         print(f"Could not send message to server {e}\n")
 
@@ -63,41 +64,41 @@ def new_user_protocol():
 def client_joined(client_sock):
     user = input("Username: ")
     existing_user = False
-    send_to_server(client_sock, ("verify_user", user))
+    send_to_server(client_sock, "veus"+user)
+    if recieve_from_server(client_sock):
+        existing_user = True
+    return existing_user, user
 
 def client(): #activates a client
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_sock:
-        client_sock.setblocking(False)
         try:
-            client_sock.connect(HOST, PORT)
-            print(f"Client {id} connected.\n")
+            client_sock.connect((HOST, PORT))
+            print(f"Client connected.\n")
         except Exception as e:
-            print(f"Client {id} did not connect: {e}\n")
+            print(f"Client did not connect: {e}\n")
+            return
 
-
-        if not short_lived_client:
-            client_inp = input("Input to server: ")
-            print("\n")
+        exist, user = client_joined(client_sock)
+        if exist:
+            print(f"Welcome back {user}")
         else:
-            try:
-                client_sock.sendall(str(id).encode())
-            except Exception as e:
-                print(f"Could not send message to server {e}\n")
+            user = "nan"
+            print(f"User does not exist. Want to create a user?")
             
-            try:
-                data = client_sock.recv(1024)
-                print(data.decode())
-            except Exception as e:
-                print(f"Could not recieve from server: {e}\n")
-  
-            client_sock.close()
-            print(f"Disconnected client {id}\n")
+        client_sock.close()
+        print(f"Disconnected client {user}\n")
     
 def main():
+    client()
+
+while run_terminal:
+    time.sleep(0.1)
+    main()
+
     cmd = input("command: ")
     if cmd == "close":
         run_terminal = False
-        return
+        
 
     client()
 
